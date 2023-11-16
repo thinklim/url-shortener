@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "accounts",
 ]
 
 MIDDLEWARE = [
@@ -73,14 +74,28 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
+AUTH_USER_MODEL = "accounts.CustomUser"
+
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "ENGINE": os.getenv("DEFAULT_DB_ENGINE"),
+        "NAME": os.getenv("DEFAULT_DB_NAME"),
+        "HOST": os.getenv("DEFAULT_DB_HOST"),
+        "PORT": os.getenv("DEFAULT_DB_PORT"),
+        "USERNAME": os.getenv("DEFAULT_DB_USERNAME"),
+        "PASSWORD": os.getenv("DEFAULT_DB_PASSWORD"),
+        "TEST": {
+            "ENGINE": os.getenv("DEFAULT_TEST_DB_ENGINE"),
+            "HOST": os.getenv("DEFAULT_TEST_DB_HOST"),
+            "PORT": os.getenv("DEFAULT_TEST_DB_PORT"),
+            "USERNAME": os.getenv("DEFAULT_TEST_DB_USERNAME"),
+            "PASSWORD": os.getenv("DEFAULT_TEST_DB_PASSWORD"),
+            "DEPENDENCIES": [],
+        },
     }
 }
 
