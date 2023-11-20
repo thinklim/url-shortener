@@ -30,7 +30,16 @@
                                         <label for="exampleInputPassword1" class="form-label">Password</label>
                                         <input type="password" name="password" class="form-control" id="exampleInputPassword1" required>
                                     </div>
+                                    {% if messages %}
+                                        {% for message in messages %}
+                                            <p {% if message.tags %} class="text-{{ message.tags }}" {% endif %}>{{ message }}</p>
+                                        {% endfor %}
+                                    {% endif %}
                                     <button type="submit" class="btn btn-primary w-100 py-8 fs-4 mb-4 rounded-2">로그인</button>
+                                    <div class="d-flex align-items-center justify-content-center">
+                                        <p class="fs-4 mb-0 fw-bold">서비스를 이용하고 싶으신가요?</p>
+                                        <a class="text-primary fw-bold ms-2" href="{% url 'sign_up' %}">회원 가입</a>
+                                    </div>
                                 </form>
                             </div>
                         </div>

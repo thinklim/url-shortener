@@ -67,3 +67,39 @@ def test_login_fail():
     response = client.get("/")
 
     assert response.status_code == 302
+
+
+@pytest.mark.django_db
+def test_sign_up():
+    form = CustomUserCreationForm(
+        data={
+            "email": "test@example.com",
+            "password1": "test_example",
+            "password2": "test_example",
+        }
+    )
+
+    assert form.is_valid()
+
+    client = Client()
+    response = client.post(
+        "/sign-up/",
+        {
+            "email": "test@example.com",
+            "password1": "test_example",
+            "password2": "test_exam",
+        },
+    )
+
+    assert response.status_code == 302 and response.url == "/sign-up/"
+
+    response = client.post(
+        "/sign-up/",
+        {
+            "email": "test@example.com",
+            "password1": "test_example",
+            "password2": "test_example",
+        },
+    )
+
+    assert response.status_code == 302 and response.url == "/login/"
