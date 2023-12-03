@@ -38,3 +38,6 @@ class ShortenedUrl(models.Model):
                 fields=["prefix", "target_url"], name="unique_shortened_url"
             )
         ]
+
+    def __str__(self) -> str:
+        return self.name
