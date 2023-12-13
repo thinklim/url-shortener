@@ -22,6 +22,7 @@ from accounts.views import IndexView, LoginView, LogoutView, SignUpView
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("", IndexView.as_view(), name="index"),
+    path("api/", include("shortener.urls"), name="shortener"),
     path("login/", LoginView.as_view(), name="login"),
     path("logout/", LogoutView.as_view(), name="logout"),
     path("sign-up/", SignUpView.as_view(), name="sign_up"),
