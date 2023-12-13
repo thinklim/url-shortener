@@ -1,11 +1,51 @@
 import pytest
 
 from accounts.models import CustomUser
+from rest_framework.status import (
+    HTTP_200_OK,
+    HTTP_201_CREATED,
+    HTTP_204_NO_CONTENT,
+    HTTP_403_FORBIDDEN,
+)
+from rest_framework.test import APIClient
 from .models import ShortenedUrl
 
 
+EXAMPLE_URL = "https://example.com"
+
+
+@pytest.fixture
+def sample_password():
+    return "sample_pw"
+
+
+@pytest.fixture
+def create_user(db, django_user_model, sample_password):
+    def make_user(**kwargs):
+        if "password" not in kwargs:
+            kwargs["password"] = sample_password
+
+        return django_user_model.objects.create_user(**kwargs)
+
+    return make_user
+
+
+@pytest.fixture
+def create_shortened_url():
+    def make_shortened_url(**kwargs):
+        if "name" not in kwargs:
+            kwargs["name"] = "example"
+
+        if "source_url" not in kwargs:
+            kwargs["source_url"] = EXAMPLE_URL
+
+        return ShortenedUrl.objects.create(**kwargs)
+
+    return make_shortened_url
+
+
 @pytest.mark.django_db
-def test_shortener_url():
+def test_shortened_url():
     user1 = CustomUser.objects.create_user(
         email="sample@example.com", password="test_example"
     )
@@ -14,7 +54,7 @@ def test_shortener_url():
     )
 
     shortened_url = ShortenedUrl.objects.create(
-        name="example", creator=user1, source_url="https://example.com"
+        name="example", creator=user1, source_url=EXAMPLE_URL
     )
 
     assert ShortenedUrl.objects.count() == 1
@@ -27,3 +67,76 @@ def test_shortener_url():
     shortened_url.save()
 
     assert shortened_url.created_time < shortened_url.updated_time
+
+
+@pytest.mark.django_db
+def test_shortened_url_api(create_user, create_shortened_url, sample_password):
+    LOCALHOST_API_ENDPOINT = "http://127.0.0.1:8000/api"
+
+    user1 = create_user(email="sample@example.com")
+    user2 = create_user(email="sample2@example.com")
+    shortened_url1 = create_shortened_url(creator=user1)
+    shortened_url2 = create_shortened_url(name="example2", creator=user1)
+    shortened_url3 = create_shortened_url(creator=user2)
+
+    # 인증 없이 접근
+    client1 = APIClient()
+    response = client1.get(f"{LOCALHOST_API_ENDPOINT}/shortened-urls/")
+
+    assert response.status_code == HTTP_403_FORBIDDEN
+
+    # 인증 후 접근
+    client1.login(email=user1.email, password=sample_password)
+    response = client1.get(f"{LOCALHOST_API_ENDPOINT}/shortened-urls/")
+
+    assert response.status_code == HTTP_200_OK
+    assert len(response.data) == 2
+
+    # 자신의 리소스가 아닌 것에 접근
+    response = client1.get(
+        f"{LOCALHOST_API_ENDPOINT}/shortened-urls/{shortened_url3.id}/"
+    )
+
+    assert response.status_code == HTTP_403_FORBIDDEN
+
+    # 생성
+    response = client1.post(
+        f"{LOCALHOST_API_ENDPOINT}/shortened-urls/",
+        {"name": "example2", "description": "", "source_url": EXAMPLE_URL},
+        "json",
+    )
+
+    assert response.status_code == HTTP_201_CREATED
+
+    # 전체 수정
+    assert ShortenedUrl.objects.get(id=shortened_url1.id).name == "example"
+
+    response = client1.put(
+        f"{LOCALHOST_API_ENDPOINT}/shortened-urls/{shortened_url1.id}/",
+        {"name": "test", "source_url": EXAMPLE_URL},
+        "json",
+    )
+
+    assert response.status_code == HTTP_200_OK
+    assert ShortenedUrl.objects.get(id=shortened_url1.id).name == "test"
+
+    # 부분 수정
+    assert ShortenedUrl.objects.get(id=shortened_url1.id).source_url == EXAMPLE_URL
+
+    response = client1.patch(
+        f"{LOCALHOST_API_ENDPOINT}/shortened-urls/{shortened_url1.id}/",
+        {"source_url": "https://test.com"},
+        "json",
+    )
+
+    assert response.status_code == HTTP_200_OK
+    assert (
+        ShortenedUrl.objects.get(id=shortened_url1.id).source_url == "https://test.com"
+    )
+
+    # 삭제
+    response = client1.delete(
+        f"{LOCALHOST_API_ENDPOINT}/shortened-urls/{shortened_url1.id}/"
+    )
+
+    assert response.status_code == HTTP_204_NO_CONTENT
