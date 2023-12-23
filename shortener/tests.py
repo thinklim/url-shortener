@@ -1,13 +1,17 @@
 import pytest
 
-from accounts.models import CustomUser
+from django.http import HttpResponseRedirect
 from rest_framework.status import (
     HTTP_200_OK,
     HTTP_201_CREATED,
     HTTP_204_NO_CONTENT,
+    HTTP_302_FOUND,
     HTTP_403_FORBIDDEN,
+    HTTP_404_NOT_FOUND,
 )
 from rest_framework.test import APIClient
+
+from accounts.models import CustomUser
 from .models import ShortenedUrl
 
 
@@ -140,3 +144,26 @@ def test_shortened_url_api(create_user, create_shortened_url, sample_password):
     )
 
     assert response.status_code == HTTP_204_NO_CONTENT
+
+
+@pytest.mark.django_db
+def test_shortened_url_redirection(create_user, create_shortened_url, sample_password):
+    user1 = create_user(email="sample@example.com")
+    shortened_url = create_shortened_url(creator=user1)
+    prefix = shortened_url.prefix
+    target_url = shortened_url.target_url
+
+    client1 = APIClient()
+    client1.login(email=user1, password=sample_password)
+
+    # 존재하는 단축 URL로 접근
+    response = client1.get(f"/{prefix}/{target_url}/")
+
+    assert response.status_code == HTTP_302_FOUND
+    assert type(response) == HttpResponseRedirect
+    assert response.url == EXAMPLE_URL
+
+    # 존재하지 않는 단축 URL로 접근
+    response = client1.get(f"/xxx/wrong/")
+
+    assert response.status_code == HTTP_404_NOT_FOUND
