@@ -20,6 +20,7 @@ from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 from accounts.views import IndexView, LoginView, LogoutView, SignUpView
+from shortener.views import ShortenedUrlRedirectionView
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -34,6 +35,11 @@ urlpatterns = [
     path("login/", LoginView.as_view(), name="login"),
     path("logout/", LogoutView.as_view(), name="logout"),
     path("sign-up/", SignUpView.as_view(), name="sign_up"),
+    path(
+        "<prefix>/<target_url>/",
+        ShortenedUrlRedirectionView.as_view(),
+        name="shortened-url",
+    ),
 ]
 
 if settings.DEBUG:

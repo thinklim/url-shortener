@@ -1,3 +1,5 @@
+from django.shortcuts import get_object_or_404
+from django.views.generic import RedirectView
 from drf_spectacular.utils import extend_schema, OpenApiExample
 from rest_framework.views import Response
 from rest_framework.viewsets import ModelViewSet
@@ -78,3 +80,14 @@ class ShortenedUrlViewSet(ModelViewSet):
     @extend_schema(examples=OPENAPI_REQUEST_RESPONSE_EXAMPLES)
     def partial_update(self, request, *args, **kwargs):
         return super().partial_update(request, *args, **kwargs)
+
+
+class ShortenedUrlRedirectionView(RedirectView):
+    def get_redirect_url(self, *args, **kwargs):
+        prefix = kwargs["prefix"]
+        target_url = kwargs["target_url"]
+        shortened_url = get_object_or_404(
+            ShortenedUrl, prefix=prefix, target_url=target_url
+        )
+
+        return shortened_url.source_url
