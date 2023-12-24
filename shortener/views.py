@@ -1,5 +1,5 @@
 from django.shortcuts import get_object_or_404
-from django.views.generic import RedirectView
+from django.views.generic import RedirectView, TemplateView
 from drf_spectacular.utils import extend_schema, OpenApiExample
 from rest_framework.views import Response
 from rest_framework.viewsets import ModelViewSet
@@ -91,3 +91,7 @@ class ShortenedUrlRedirectionView(RedirectView):
         )
 
         return shortened_url.source_url
+
+
+class ShortenedUrlNewView(TemplateView):
+    template_name = "shortened_url/new.html"
