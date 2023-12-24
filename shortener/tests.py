@@ -167,3 +167,31 @@ def test_shortened_url_redirection(create_user, create_shortened_url, sample_pas
     response = client1.get(f"/xxx/wrong/")
 
     assert response.status_code == HTTP_404_NOT_FOUND
+
+
+@pytest.mark.django_db
+def test_shortened_url_detail(create_user, create_shortened_url, sample_password):
+    user1 = create_user(email="sample@example.com")
+    user2 = create_user(email="sample2@example.com")
+    shortened_url1 = create_shortened_url(creator=user1)
+    shortened_url2 = create_shortened_url(creator=user2)
+
+    client1 = APIClient()
+    client1.login(email=user1, password=sample_password)
+
+    # 자신의 단축 URL 상세 페이지로 접근
+    response = client1.get(f"/shortened-urls/{shortened_url1.id}/")
+
+    assert response.status_code == HTTP_200_OK
+
+    # 다른 사용자의 단축 URL 상세 페이지로 접근
+    response = client1.get(f"/shortened-urls/{shortened_url2.id}/")
+
+    assert response.status_code == HTTP_404_NOT_FOUND
+
+    # 익명 사용자가 단축 URL 상세 페이지로 접근
+    anonymous_client = APIClient()
+
+    response = anonymous_client.get(f"/shortened-urls/{shortened_url1.id}/")
+
+    assert response.status_code == HTTP_302_FOUND

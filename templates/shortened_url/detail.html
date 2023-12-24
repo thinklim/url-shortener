@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block title %}상세{% endblock%}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-lg-12 d-flex align-items-stretch">
+            <div class="card w-100">
+                <div class="card-body p-4">
+                    <h5 class="card-title fw-semibold mb-4">단축 URL 상세</h5>
+                </div>
+                <form id="shortenedUrlDetailForm" class="mx-5 mb-5" novalidate>
+                    <div class="mb-3">
+                        <label for="nameInput" class="form-label">이름 <small class="text-danger">*</small></label>
+                        <p class="placeholder-glow">
+                            <span class="placeholder col-12"></span>
+                        </p>
+                        <input id="nameInput" type="text" class="form-control d-none" maxlength="150" aria-describedby="nameHelp" required>
+                        <div id="nameHelp" class="form-text d-none">이름은 150자 이하로 입력하세요.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="sourceUrlInput" class="form-label">원본 URL <small class="text-danger">*</small></label>
+                        <p class="placeholder-glow">
+                            <span class="placeholder col-12"></span>
+                        </p>                        
+                        <input id="sourceUrlInput" type="url" class="form-control d-none" aria-describedby="sourceUrlHelp" required>
+                        <div id="sourceUrlHelp" class="form-text d-none">원본 URL은 단축 URL로 바꿀 URL입니다.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="descriptionInput" class="form-label">설명</label>
+                        <p class="placeholder-glow">
+                            <span class="placeholder col-12"></span>
+                        </p>                        
+                        <input id="descriptionInput" type="text" class="form-control d-none">
+                    </div>
+                    <div class="mb-3">
+                        <label for="prefixInput" class="form-label">Prefix</label>
+                        <p class="placeholder-glow">
+                            <span class="placeholder col-12"></span>
+                        </p>                        
+                        <input id="prefixInput" type="text" class="form-control d-none" disabled>
+                    </div>
+                    <div class="mb-3">
+                        <label for="targetUrlInput" class="form-label">단축 URL</label>
+                        <p class="placeholder-glow">
+                            <span class="placeholder col-12"></span>
+                        </p>                        
+                        <input id="targetUrlInput" type="text" class="form-control d-none" disabled>
+                    </div>
+                    <div class="mb-3">
+                        <label for="createdTimeInput" class="form-label">생성 시간</label>
+                        <p class="placeholder-glow">
+                            <span class="placeholder col-12"></span>
+                        </p>                        
+                        <input id="createdTimeInput" type="text" class="form-control d-none" disabled>
+                    </div>
+                    <div class="mb-3">
+                        <label for="updatedTimeInput" class="form-label">수정 시간</label>
+                        <p class="placeholder-glow">
+                            <span class="placeholder col-12"></span>
+                        </p>                        
+                        <input id="updatedTimeInput" type="text" class="form-control d-none" disabled>
+                    </div>                                    
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block js %}
+<script src="{% static 'js/shortened_url/detail.js' %}"></script>
+{% endblock %}
