@@ -11,6 +11,9 @@
             <div class="card w-100">
                 <div class="card-body p-4">
                     <h5 class="card-title fw-semibold mb-4">단축 URL</h5>
+                    <div class="text-end">
+                        <a id="shortenedUrlNew" class="btn btn-primary m-1" href="{% url 'shortened-url-new' %}">단축 URL 생성</a>
+                    </div>
                     <div class="table-responsive">
                         <table id="shortenedUrlListTable" class="table text-nowrap mb-0 align-middle">
                             <thead class="text-dark fs-4">
