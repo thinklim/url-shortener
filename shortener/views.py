@@ -1,4 +1,5 @@
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, render
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import RedirectView, TemplateView
 from drf_spectacular.utils import extend_schema, OpenApiExample
 from rest_framework.views import Response
@@ -95,3 +96,14 @@ class ShortenedUrlRedirectionView(RedirectView):
 
 class ShortenedUrlNewView(TemplateView):
     template_name = "shortened_url/new.html"
+
+
+class ShortenedUrlDetailView(LoginRequiredMixin, TemplateView):
+    template_name = "shortened_url/detail.html"
+
+    def get(self, request, *args, **kwargs):
+        id = kwargs["pk"]
+        user = request.user
+        shortened_url = get_object_or_404(ShortenedUrl, pk=id, creator=user)
+
+        return render(request, self.template_name)
