@@ -9,6 +9,7 @@ const shortenedUrlPrefixInputElement = shortenedUrlDetailFormElement.querySelect
 const shortenedUrlTargetUrlInputElement = shortenedUrlDetailFormElement.querySelector('#targetUrlInput');
 const shortenedUrlCreatedTimeInputElement = shortenedUrlDetailFormElement.querySelector('#createdTimeInput');
 const shortenedUrlUpdatedTimeInputElement = shortenedUrlDetailFormElement.querySelector('#updatedTimeInput');
+const shortenedUrlRemoveButtonElement = shortenedUrlDetailFormElement.querySelector('#shortenedUrlRemoveButton');
 const placeholderElements = document.querySelectorAll('.placeholder-glow');
 const urlPathname = location.pathname;
 
@@ -37,8 +38,9 @@ setTimeout(() => {
         });    
 }, 1000);
 
-// Event
+// Events
 
+// 단축 URL 수정 버튼 클릭 이벤트
 shortenedUrlDetailFormElement.addEventListener('submit', (event) => {
     event.preventDefault();
     event.stopPropagation();
@@ -67,4 +69,25 @@ shortenedUrlDetailFormElement.addEventListener('submit', (event) => {
             console.log(error);
         })
     }
+});
+
+// 단축 URL 삭제 버튼 클릭 이벤트
+shortenedUrlRemoveButtonElement.addEventListener('click', (event) => {
+    // 폼 안에 버튼이 위치해 submit 이벤트(단축 URL 수정 이벤트)도 같이 발생하여 이벤트를 막음 
+    event.preventDefault();
+    event.stopPropagation();
+
+    axios({
+        method: 'delete',
+        url: `/api${urlPathname}`,
+        headers: {
+            'X-CSRFToken': csrftoken
+        }
+    }).then(response => {
+        alert('삭제했습니다.');
+
+        location.replace('/');
+    }).catch(error => {
+        console.log(error);
+    })
 });
