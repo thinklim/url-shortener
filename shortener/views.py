@@ -94,7 +94,7 @@ class ShortenedUrlRedirectionView(RedirectView):
         return shortened_url.source_url
 
 
-class ShortenedUrlNewView(TemplateView):
+class ShortenedUrlNewView(LoginRequiredMixin, TemplateView):
     template_name = "shortened_url/new.html"
 
 
