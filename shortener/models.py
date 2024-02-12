@@ -1,6 +1,5 @@
 import string
 import random
-
 from django.db import models
 from django.conf import settings
 
@@ -41,3 +40,26 @@ class ShortenedUrl(models.Model):
 
     def __str__(self) -> str:
         return self.name
+
+
+class ShortenedUrlStatistics(models.Model):
+    date = models.DateField()
+    clicked = models.BigIntegerField(default=0)
+    shortened_url = models.ForeignKey("ShortenedUrl", on_delete=models.CASCADE)
+
+    class Meta:
+        db_table = "shortened_url_statistics"
+        ordering = ["-date", "shortened_url"]
+        indexes = [
+            models.Index(fields=["date"]),
+            models.Index(fields=["shortened_url"]),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["date", "shortened_url"], name="unique_shortened_url_statistics"
+            )
+        ]
+
+    def record(self):
+        self.clicked += 1
+        self.save()
