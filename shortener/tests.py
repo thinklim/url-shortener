@@ -1,5 +1,7 @@
 import pytest
 
+from datetime import timedelta
+from django.utils import timezone
 from django.http import HttpResponseRedirect
 from rest_framework.status import (
     HTTP_200_OK,
@@ -12,7 +14,7 @@ from rest_framework.status import (
 from rest_framework.test import APIClient
 
 from accounts.models import CustomUser
-from .models import ShortenedUrl
+from .models import ShortenedUrl, ShortenedUrlStatistics
 
 
 EXAMPLE_URL = "https://example.com"
@@ -46,6 +48,14 @@ def create_shortened_url():
         return ShortenedUrl.objects.create(**kwargs)
 
     return make_shortened_url
+
+
+@pytest.fixture
+def create_shortened_url_statistics():
+    def make_shortened_url_statistics(**kwargs):
+        return ShortenedUrlStatistics.objects.create(**kwargs)
+
+    return make_shortened_url_statistics
 
 
 @pytest.mark.django_db
@@ -195,3 +205,87 @@ def test_shortened_url_detail(create_user, create_shortened_url, sample_password
     response = anonymous_client.get(f"/shortened-urls/{shortened_url1.id}/")
 
     assert response.status_code == HTTP_302_FOUND
+
+
+@pytest.mark.django_db
+def test_shortened_url_statistics(
+    create_user, create_shortened_url, create_shortened_url_statistics
+):
+    today = timezone.now().date()
+    user1 = create_user(email="sample@example.com")
+    shortened_url1 = create_shortened_url(creator=user1)
+    shortened_url_statistics1 = create_shortened_url_statistics(
+        date=today, shortened_url=shortened_url1
+    )
+
+    assert shortened_url_statistics1.clicked == 0
+
+    shortened_url_statistics1.record()
+
+    assert shortened_url_statistics1.clicked == 1
+
+
+@pytest.mark.django_db
+def test_shortened_url_statistics_api(
+    create_user, create_shortened_url, create_shortened_url_statistics, sample_password
+):
+    today = timezone.now().date()
+    yesterday = today - timedelta(days=1)
+    tomorrow = today + timedelta(days=1)
+
+    user1 = create_user(email="sample@example.com")
+    shortened_url1 = create_shortened_url(creator=user1)
+
+    user2 = create_user(email="sample2@example.com")
+    shortened_url2 = create_shortened_url(creator=user2)
+    shortened_url3 = create_shortened_url(creator=user2)
+
+    # shortened_url1 데이터 생성
+    create_shortened_url_statistics(date=today, shortened_url=shortened_url1)
+    create_shortened_url_statistics(date=tomorrow, shortened_url=shortened_url1)
+
+    # shortened_url2 데이터 생성
+    create_shortened_url_statistics(
+        date=yesterday, shortened_url=shortened_url2, clicked=10
+    )
+    create_shortened_url_statistics(
+        date=today, shortened_url=shortened_url2, clicked=20
+    )
+    create_shortened_url_statistics(
+        date=tomorrow, shortened_url=shortened_url2, clicked=50
+    )
+
+    # shortened_url3 데이터 생성
+    create_shortened_url_statistics(date=today, shortened_url=shortened_url3, clicked=5)
+
+    # 사용자 1번 테스트
+    client1 = APIClient()
+    client1.login(email=user1, password=sample_password)
+
+    response = client1.get(f"/api/shortened-url-statistics/")
+
+    assert response.status_code == HTTP_200_OK
+    assert len(response.data) == 2
+
+    # 사용자 2번 테스트(자신의 데이터만 조회 및 필터링 포함)
+    client2 = APIClient()
+    client2.login(email=user2, password=sample_password)
+
+    response = client2.get(f"/api/shortened-url-statistics/")
+
+    assert response.status_code == HTTP_200_OK
+    assert len(response.data) == 4
+
+    response = client2.get(f"/api/shortened-url-statistics/?start_date={today}")
+
+    assert len(response.data) == 3
+
+    response = client2.get(f"/api/shortened-url-statistics/?min_clicked=30")
+
+    assert len(response.data) == 1
+
+    response = client2.get(
+        f"/api/shortened-url-statistics/?start_date={today}&shortened_url={shortened_url3.id}"
+    )
+
+    assert len(response.data) == 1

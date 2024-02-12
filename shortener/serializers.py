@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import ShortenedUrl
+from .models import ShortenedUrl, ShortenedUrlStatistics
 
 
 class ShortenedUrlSerializer(serializers.ModelSerializer):
@@ -29,3 +29,10 @@ class ShortenedUrlSerializer(serializers.ModelSerializer):
         instance.save()
 
         return instance
+
+
+class ShortenedUrlStatisticsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ShortenedUrlStatistics
+        fields = "__all__"
+        read_only_fields = ["date", "clicked", "shortened_url"]

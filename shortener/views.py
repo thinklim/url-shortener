@@ -1,12 +1,15 @@
 from django.shortcuts import get_object_or_404, render
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import RedirectView, TemplateView
+from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema, OpenApiExample
 from rest_framework.views import Response
+from rest_framework.generics import ListAPIView
 from rest_framework.viewsets import ModelViewSet
-from .models import ShortenedUrl
+from .filters import ShortenedUrlStatisticsFilter
+from .models import ShortenedUrl, ShortenedUrlStatistics
 from .permissions import IsOwner
-from .serializers import ShortenedUrlSerializer
+from .serializers import ShortenedUrlSerializer, ShortenedUrlStatisticsSerializer
 
 
 OPENAPI_REQUEST_EXAMPLE_VALUE = {
@@ -107,3 +110,15 @@ class ShortenedUrlDetailView(LoginRequiredMixin, TemplateView):
         shortened_url = get_object_or_404(ShortenedUrl, pk=id, creator=user)
 
         return render(request, self.template_name)
+
+
+class ShortenedUrlStatisticsView(ListAPIView):
+    serializer_class = ShortenedUrlStatisticsSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = ShortenedUrlStatisticsFilter
+
+    def get_queryset(self):
+        creator = self.request.user
+        queryset = ShortenedUrlStatistics.objects.filter(shortened_url__creator=creator)
+
+        return queryset
