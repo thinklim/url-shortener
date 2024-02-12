@@ -157,7 +157,9 @@ def test_shortened_url_api(create_user, create_shortened_url, sample_password):
 
 
 @pytest.mark.django_db
-def test_shortened_url_redirection(create_user, create_shortened_url, sample_password):
+def test_shortened_url_redirection(
+    create_user, create_shortened_url, create_shortened_url_statistics, sample_password
+):
     user1 = create_user(email="sample@example.com")
     shortened_url = create_shortened_url(creator=user1)
     prefix = shortened_url.prefix
@@ -172,6 +174,19 @@ def test_shortened_url_redirection(create_user, create_shortened_url, sample_pas
     assert response.status_code == HTTP_302_FOUND
     assert type(response) == HttpResponseRedirect
     assert response.url == EXAMPLE_URL
+
+    today = timezone.now().date()
+    shortened_url_statistics = ShortenedUrlStatistics.objects.get(
+        date=today, shortened_url=shortened_url.id
+    )
+    assert shortened_url_statistics.clicked == 1
+
+    response = client1.get(f"/{prefix}/{target_url}/")
+
+    shortened_url_statistics = ShortenedUrlStatistics.objects.get(
+        date=today, shortened_url=shortened_url.id
+    )
+    assert shortened_url_statistics.clicked == 2
 
     # 존재하지 않는 단축 URL로 접근
     response = client1.get(f"/xxx/wrong/")
