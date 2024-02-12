@@ -1,5 +1,7 @@
-from django.shortcuts import get_object_or_404, render
+from django.db import transaction
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.shortcuts import get_object_or_404, render
+from django.utils import timezone
 from django.views.generic import RedirectView, TemplateView
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema, OpenApiExample
@@ -93,6 +95,22 @@ class ShortenedUrlRedirectionView(RedirectView):
         shortened_url = get_object_or_404(
             ShortenedUrl, prefix=prefix, target_url=target_url
         )
+
+        try:
+            with transaction.atomic():
+                today = timezone.now().date()
+
+                # 동시에 자원 접근 시 트랙잭션이 끝날 때까지 자원을 잠금
+                shortened_url_statistics = (
+                    ShortenedUrlStatistics.objects.select_for_update().get(
+                        date=today, shortened_url=shortened_url
+                    )
+                )
+                shortened_url_statistics.record()
+        except ShortenedUrlStatistics.DoesNotExist:
+            ShortenedUrlStatistics.objects.create(
+                date=today, shortened_url=shortened_url, clicked=1
+            )
 
         return shortened_url.source_url
 
