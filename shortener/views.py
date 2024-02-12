@@ -94,24 +94,6 @@ class ShortenedUrlRedirectionView(RedirectView):
             ShortenedUrl, prefix=prefix, target_url=target_url
         )
 
-        from django.db import transaction
-        from django.utils import timezone
-
-        try:
-            today = timezone.now().date()
-
-            with transaction.atomic():
-                shortened_url_statistics = (
-                    ShortenedUrlStatistics.objects.select_for_update().get(
-                        date=today, shortened_url=shortened_url
-                    )
-                )
-                shortened_url_statistics.record()
-        except ShortenedUrlStatistics.DoesNotExist:
-            ShortenedUrlStatistics.objects.create(
-                date=today, shortened_url=shortened_url, clicked=1
-            )
-
         return shortened_url.source_url
 
 
