@@ -104,6 +104,20 @@ DATABASES = {
 }
 
 
+# Cache
+# https://docs.djangoproject.com/en/4.2/topics/cache/
+
+CACHES = {
+    "default": {
+        "BACKEND": os.getenv("CACHE_BACKEND"),
+        "LOCATION": os.getenv("CACHE_LOCATION"),
+        "OPTIONS": {
+            "CLIENT_CLASS": os.getenv("CACHE_CLIENT_CLASS"),
+        },
+    }
+}
+
+
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
 

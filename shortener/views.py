@@ -1,3 +1,4 @@
+from django.core.cache import cache
 from django.db import transaction
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import get_object_or_404, render
@@ -92,9 +93,32 @@ class ShortenedUrlRedirectionView(RedirectView):
     def get_redirect_url(self, *args, **kwargs):
         prefix = kwargs["prefix"]
         target_url = kwargs["target_url"]
-        shortened_url = get_object_or_404(
-            ShortenedUrl, prefix=prefix, target_url=target_url
+
+        # Look Aside 방식으로 데이터를 가져옴
+        # 기본 키 만료 시간 5분
+        # 캐시 스템피드 문제 존재(TTL 만료 시간을 업데이트하여 개선할 수 있음)
+
+        cached_shortened_url_id_and_source_url = cache.get(
+            f"shortened_url:{prefix}:{target_url}"
         )
+
+        if cached_shortened_url_id_and_source_url is None:
+            shortened_url = get_object_or_404(
+                ShortenedUrl, prefix=prefix, target_url=target_url
+            )
+
+            shortened_url_id = shortened_url.id
+            shortened_url_source_url = shortened_url.source_url
+
+            cache.set(
+                f"shortened_url:{prefix}:{target_url}",
+                {"id": shortened_url_id, "source_url": shortened_url_source_url},
+            )
+        else:
+            shortened_url_id = cached_shortened_url_id_and_source_url["id"]
+            shortened_url_source_url = cached_shortened_url_id_and_source_url[
+                "source_url"
+            ]
 
         try:
             with transaction.atomic():
@@ -103,7 +127,7 @@ class ShortenedUrlRedirectionView(RedirectView):
                 # 동시에 자원 접근 시 트랙잭션이 끝날 때까지 자원을 잠금
                 shortened_url_statistics = (
                     ShortenedUrlStatistics.objects.select_for_update().get(
-                        date=today, shortened_url=shortened_url
+                        date=today, shortened_url=shortened_url_id
                     )
                 )
                 shortened_url_statistics.record()
@@ -112,7 +136,7 @@ class ShortenedUrlRedirectionView(RedirectView):
                 date=today, shortened_url=shortened_url, clicked=1
             )
 
-        return shortened_url.source_url
+        return shortened_url_source_url
 
 
 class ShortenedUrlNewView(LoginRequiredMixin, TemplateView):

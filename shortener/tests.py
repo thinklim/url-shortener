@@ -1,6 +1,7 @@
 import pytest
 
 from datetime import timedelta
+from django.core.cache import cache
 from django.utils import timezone
 from django.http import HttpResponseRedirect
 from rest_framework.status import (
@@ -304,3 +305,10 @@ def test_shortened_url_statistics_api(
     )
 
     assert len(response.data) == 1
+
+
+def test_cache():
+    cache.set("hello", "world")
+    data = cache.get("hello")
+
+    assert data == "world"
