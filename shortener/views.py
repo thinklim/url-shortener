@@ -80,10 +80,12 @@ class ShortenedUrlViewSet(ModelViewSet):
     def retrieve(self, request, *args, **kwargs):
         return super().retrieve(request, *args, **kwargs)
 
+    # 단축 URL 객체가 성공적으로 수정 된 후 delete_shortened_url_redirection_cache() 시그널 수행
     @extend_schema(examples=OPENAPI_REQUEST_RESPONSE_EXAMPLES)
     def update(self, request, *args, **kwargs):
         return super().update(request, *args, **kwargs)
 
+    # 단축 URL 객체가 성공적으로 수정 된 후 delete_shortened_url_redirection_cache() 시그널 수행
     @extend_schema(examples=OPENAPI_REQUEST_RESPONSE_EXAMPLES)
     def partial_update(self, request, *args, **kwargs):
         return super().partial_update(request, *args, **kwargs)

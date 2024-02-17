@@ -312,3 +312,60 @@ def test_cache():
     data = cache.get("hello")
 
     assert data == "world"
+
+
+@pytest.mark.django_db
+def test_delete_shortened_url_redirection_cache_signal(
+    create_user, create_shortened_url, sample_password
+):
+    user = create_user(email="sample@example.com")
+    shortened_url = create_shortened_url(creator=user)
+    prefix = shortened_url.prefix
+    target_url = shortened_url.target_url
+
+    client = APIClient()
+    client.login(email=user.email, password=sample_password)
+
+    # Test 1: 단축 URL 수정 요청 테스트(HTTP PUT 메서드 호출)
+    # 단축 URL 리디렉션
+    response = client.get(f"/{prefix}/{target_url}/")
+
+    assert response.status_code == HTTP_302_FOUND
+
+    cached_shortend_url = cache.get(f"shortened_url:{prefix}:{target_url}")
+
+    assert cached_shortend_url["source_url"] == shortened_url.source_url
+
+    # 단축 URL 수정
+    response = client.put(
+        f"/api/shortened-urls/{shortened_url.id}/",
+        {"name": "sample", "source_url": "http://sample.com"},
+    )
+
+    assert response.status_code == HTTP_200_OK
+
+    cached_shortend_url = cache.get(f"shortened_url:{prefix}:{target_url}")
+
+    assert cached_shortend_url is None
+
+    # Test 2: 단축 URL 수정 요청 테스트(HTTP PATCH 메서드 호출)
+    # 단축 URL 리디렉션
+    response = client.get(f"/{prefix}/{target_url}/")
+
+    assert response.status_code == HTTP_302_FOUND
+
+    cached_shortend_url = cache.get(f"shortened_url:{prefix}:{target_url}")
+
+    assert cached_shortend_url["source_url"] == "http://sample.com"
+
+    # 단축 URL 수정
+    response = client.patch(
+        f"/api/shortened-urls/{shortened_url.id}/",
+        {"source_url": "http://example.com"},
+    )
+
+    assert response.status_code == HTTP_200_OK
+
+    cached_shortend_url = cache.get(f"shortened_url:{prefix}:{target_url}")
+
+    assert cached_shortend_url is None
